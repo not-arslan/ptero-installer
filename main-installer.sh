@@ -1,9 +1,15 @@
 #!/bin/bash
 
-# Prompt for username at the very beginning
-read -p "Enter the username to use for the installation (system/web user): " INSTALL_USER
+# Prompt for installation username
+read -p "Enter the username to use for installation (e.g., ubuntu, ec2-user): " INSTALL_USER
 if [[ -z "$INSTALL_USER" ]]; then
     echo "❌ Username cannot be empty."
+    exit 1
+fi
+
+# Verify user exists
+if ! id "$INSTALL_USER" &>/dev/null; then
+    echo "❌ User '$INSTALL_USER' does not exist. Please create it or enter a valid username."
     exit 1
 fi
 
@@ -15,8 +21,6 @@ cat << "EOF"
 ██   ██ ██   ██      ██ ██   ██ ██   ██ ██         ██       ██    ██      ██      
 ██   ██ ██   ██ ███████ ██████  ██   ██  ██████    ██       ██    ███████ ███████ 
                                                                                   
-                                                                                                                                                                    
-                                                                                             
 EOF
 }
 
@@ -25,8 +29,8 @@ panel_install(){
     # Default DB values
     panel_db_host="127.0.0.1"
     panel_db_name="panel"
-    panel_db_user="flamedactyl"
-    panel_db_password="flamedactyl"
+    panel_db_user="arsdactyl"
+    panel_db_password="arsdactyl"
 
     user_email=""
     user_username="$INSTALL_USER"
