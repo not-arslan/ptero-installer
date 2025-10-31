@@ -2,12 +2,12 @@
 
 # ===================== PROMPT FOR USER =====================
 while true; do
-    read -p "Enter the username to use for the installation (system/web user): " INSTALL_USER
+    read -r -p "Enter the username to use for the installation (system/web user): " INSTALL_USER
     if [[ -z "$INSTALL_USER" ]]; then
         echo "❌ Username cannot be empty."
     elif ! id "$INSTALL_USER" &>/dev/null; then
         echo "❌ User '$INSTALL_USER' does not exist on this system."
-        read -p "Do you want to create it? (y/n): " yn
+        read -r -p "Do you want to create it? (y/n): " yn
         case $yn in
             [Yy]* )
                 sudo adduser "$INSTALL_USER"
@@ -58,7 +58,7 @@ panel_install(){
         local var_name="$1"
         local prompt_text="$2"
         local default_value="$3"
-        read -p "$prompt_text [$default_value]: " input
+        read -r -p "$prompt_text [$default_value]: " input
         if [[ -n "$input" ]]; then
             eval "$var_name=\"$input\""
         else
@@ -71,7 +71,7 @@ panel_install(){
         local prompt_text="$2"
         local input=""
         while [[ -z "$input" ]]; do
-            read -p "$prompt_text: " input
+            read -r -p "$prompt_text: " input
         done
         eval "$var_name=\"$input\""
     }
@@ -81,7 +81,7 @@ panel_install(){
         local prompt_text="$2"
         local input=""
         while true; do
-            read -sp "$prompt_text: " input
+            read -r -sp "$prompt_text: " input
             echo
             if [[ ${#input} -lt 8 ]]; then
                 echo "❌ Password must be at least 8 characters."
@@ -134,7 +134,7 @@ panel_install(){
 
     # ===================== DOWNLOAD PANEL =====================
     mkdir -p /var/www/pterodactyl
-    cd /var/www/pterodactyl
+    cd /var/www/pterodactyl || exit
     curl -Lo panel.tar.gz https://github.com/pterodactyl/panel/releases/latest/download/panel.tar.gz
     tar -xzvf panel.tar.gz
     chmod -R 755 storage/* bootstrap/cache/
@@ -180,7 +180,7 @@ $user_lastname
 $user_password
 EOF
 
-    chown -R $INSTALL_USER:$INSTALL_USER /var/www/pterodactyl/*
+    chown -R "$INSTALL_USER":"$INSTALL_USER" /var/www/pterodactyl/*
 
     # ===================== SYSTEMD SERVICE FOR PANEL =====================
     SERVICE_FILE="/etc/systemd/system/pteroq.service"
@@ -254,7 +254,7 @@ EOF
 
 # ===================== WINGS INSTALL =====================
 wings_install(){
-    read -p "Enter Wings domain for SSL (e.g., panel.example.com): " WINGS_DOMAIN
+    # Note: Wings configuration (including domain/SSL) is done via the panel's admin interface
     mkdir -p /etc/wings
     curl -Lo /etc/wings/wings https://github.com/pterodactyl/wings/releases/latest/download/wings_linux_amd64
     chmod +x /etc/wings/wings
@@ -289,7 +289,7 @@ menu(){
     echo "1) Install Panel"
     echo "2) Install Wings"
     echo "3) Exit"
-    read -p "Select an option: " opt
+    read -r -p "Select an option: " opt
     case $opt in
         1) panel_install ;;
         2) wings_install ;;
