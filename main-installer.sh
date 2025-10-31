@@ -1,18 +1,31 @@
 #!/bin/bash
 
-# Prompt for installation username
-read -p "Enter the username to use for installation (e.g., ubuntu, ec2-user): " INSTALL_USER
-if [[ -z "$INSTALL_USER" ]]; then
-    echo "❌ Username cannot be empty."
-    exit 1
-fi
+# ===================== PROMPT FOR USER =====================
+while true; do
+    read -p "Enter the username to use for the installation (system/web user): " INSTALL_USER
+    if [[ -z "$INSTALL_USER" ]]; then
+        echo "❌ Username cannot be empty."
+    elif ! id "$INSTALL_USER" &>/dev/null; then
+        echo "❌ User '$INSTALL_USER' does not exist on this system."
+        read -p "Do you want to create it? (y/n): " yn
+        case $yn in
+            [Yy]* )
+                sudo adduser "$INSTALL_USER"
+                break
+                ;;
+            [Nn]* )
+                echo "Please enter a valid existing username."
+                ;;
+            * )
+                echo "Please answer yes or no."
+                ;;
+        esac
+    else
+        break
+    fi
+done
 
-# Verify user exists
-if ! id "$INSTALL_USER" &>/dev/null; then
-    echo "❌ User '$INSTALL_USER' does not exist. Please create it or enter a valid username."
-    exit 1
-fi
-
+# ===================== BANNER =====================
 banner(){
 cat << "EOF"
  █████  ██████  ███████ ██████   █████   ██████ ████████ ██    ██ ██      ███████ 
@@ -40,7 +53,7 @@ panel_install(){
     panel_url=""
     panel_timezone="UTC"
 
-    # Prompt functions
+    # ===================== PROMPT FUNCTIONS =====================
     prompt() {
         local var_name="$1"
         local prompt_text="$2"
@@ -110,7 +123,7 @@ panel_install(){
     echo "Panel URL: $panel_url"
     echo "Timezone: $panel_timezone"
 
-    # Install dependencies
+    # ===================== INSTALL DEPENDENCIES =====================
     apt -y install software-properties-common curl apt-transport-https ca-certificates gnupg
     LC_ALL=C.UTF-8 add-apt-repository -y ppa:ondrej/php
     curl -fsSL https://packages.redis.io/gpg | sudo gpg --dearmor -o /usr/share/keyrings/redis-archive-keyring.gpg
@@ -119,21 +132,21 @@ panel_install(){
     apt -y install php8.3 php8.3-{common,cli,gd,mysql,mbstring,bcmath,xml,fpm,curl,zip} mariadb-server nginx tar unzip git redis-server
     curl -sS https://getcomposer.org/installer | sudo php -- --install-dir=/usr/local/bin --filename=composer
 
-    # Download Panel
+    # ===================== DOWNLOAD PANEL =====================
     mkdir -p /var/www/pterodactyl
     cd /var/www/pterodactyl
     curl -Lo panel.tar.gz https://github.com/pterodactyl/panel/releases/latest/download/panel.tar.gz
     tar -xzvf panel.tar.gz
     chmod -R 755 storage/* bootstrap/cache/
 
-    # Setup database
+    # ===================== SETUP DATABASE =====================
     mysql -u root <<EOF
 CREATE USER '$panel_db_user'@'127.0.0.1' IDENTIFIED BY '$panel_db_password';
 CREATE DATABASE $panel_db_name;
 GRANT ALL PRIVILEGES ON $panel_db_name.* TO '$panel_db_user'@'127.0.0.1' WITH GRANT OPTION;
 EOF
 
-    # Panel setup
+    # ===================== PANEL SETUP =====================
     cp .env.example .env
     COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --optimize-autoloader
     php artisan key:generate --force
@@ -169,7 +182,7 @@ EOF
 
     chown -R $INSTALL_USER:$INSTALL_USER /var/www/pterodactyl/*
 
-    # Systemd service for panel queue
+    # ===================== SYSTEMD SERVICE FOR PANEL =====================
     SERVICE_FILE="/etc/systemd/system/pteroq.service"
     cat <<EOF > "$SERVICE_FILE"
 [Unit]
@@ -193,7 +206,7 @@ EOF
     systemctl enable --now pteroq.service
     systemctl enable --now redis-server
 
-    # Nginx config
+    # ===================== NGINX CONFIG =====================
     rm -f /etc/nginx/sites-enabled/default
     CONFIG_FILE="/etc/nginx/sites-available/pterodactyl.conf"
 
@@ -270,6 +283,7 @@ EOF
     echo "✅ Wings installation completed."
 }
 
+# ===================== MENU =====================
 menu(){
     banner
     echo "1) Install Panel"
