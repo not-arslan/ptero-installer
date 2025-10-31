@@ -51,4 +51,4 @@ This script simplifies setup, configuration, and management of your Pterodactyl 
 Run the installer directly from GitHub with a single command:
 
 ```bash
-bash <(curl -sSL https://raw.githubusercontent.com/not-arslan/ptero-installer/main/ptero_installer.sh)
+bash <(curl -sSL https://raw.githubusercontent.com/not-arslan/ptero-installer/main/main-installer.sh)
